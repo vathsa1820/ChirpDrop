@@ -1,17 +1,19 @@
-# ChirpDrop - Web Acoustic Receiver (iPhone Safari & Mobile PWA)
+# ChirpDrop - Web Acoustic Receiver (Android Chrome & iPhone Safari PWA)
 
-A lightweight, self-contained, offline-first acoustic message receiver designed for **iPhone Safari** and modern mobile browsers.
+A lightweight, self-contained, offline-first acoustic message receiver designed for **Android Google Chrome**, **iPhone Safari**, and modern mobile browsers.
 
-Communicates with the ChirpDrop Python desktop sender across an **air-gap using only sound waves** (built-in laptop speaker → iPhone microphone).
+Communicates with the ChirpDrop Python desktop sender across an **air-gap using only sound waves** (built-in laptop speaker → smartphone microphone).
 
 ---
 
 ## Features
 
-- **No Native App Needed**: Runs directly in iPhone Safari as a Progressive Web App (PWA).
+- **Cross-Platform Mobile PWA**: Runs directly in Android Chrome and iPhone Safari without installing native apps.
 - **Embedded WebAssembly Modem**: Uses an offline-bundled GGWave WebAssembly decoder (`ggwave.js`). No external CDNs required at runtime.
+- **Sample-Rate Adaptation (44.1 kHz & 48 kHz)**: Includes a phase-continuous streaming resampler that transparently converts hardware microphone rates to 48 kHz.
 - **Strict Packet Framing & CRC Verification**: Deserializes Base64 into binary packets (`CD\x01` magic preamble, Opcode `0x02` DATA, Sequence ID, CRC-16 checksum matching Python `zlib.crc32(...) & 0xFFFF`).
 - **Feedback Suppression**: Feeds microphone PCM into Web Audio with a zero-gain mute node to prevent phone speaker feedback / howling.
+- **Background Interruption Recovery**: Automatically resumes the audio engine and re-acquires screen wake locks when returning to the browser tab.
 - **Air-Gapped & Offline Ready**: Once cached by the Service Worker (`sw.js`), the receiver functions with **Wi-Fi, Cellular, and Bluetooth completely disabled**.
 
 ---
@@ -77,21 +79,28 @@ If testing on the same local Wi-Fi without deploying to GitHub:
 
 ---
 
-## Testing Laptop → iPhone Acoustic Transmission
+## Testing Laptop → Smartphone Acoustic Transmission (Android & iPhone)
 
-1. Open the receiver URL on your iPhone in Safari.
-2. Tap **[ START LISTENING ]** and allow microphone access when prompted.
+1. **Open the Receiver URL**:
+   - On Android: Open Google Chrome and navigate to your deployed HTTPS URL (or local HTTPS server).
+   - On iPhone: Open Safari and navigate to your deployed HTTPS URL.
+2. **Start Listening**:
+   - Tap **[ START LISTENING ]** and allow microphone access when prompted.
    - Status updates to: `Status: Listening for nearby transmissions...`
-   - The acoustic level meter bar moves in real-time to ambient sound.
-3. On your Windows laptop, open a terminal in the `ChirpDrop` folder and send a message:
-   ```powershell
-   .\.venv\Scripts\python.exe main.py send --text "Hello from ChirpDrop!"
-   ```
-4. Within 2-3 seconds of the chirp completing, your iPhone will display:
-   ```text
-   🔊 MESSAGE RECEIVED
-   Hello from ChirpDrop!
-   ✓ Packet validation: Successful
-   Seq #1 | CRC: 0xCDBF | Size: 21 bytes | Opcode: DATA
-   ```
-5. You can now enable **Airplane Mode** on the iPhone and repeat the test — the web receiver continues to operate 100% offline.
+   - The green dot pulses and the **Acoustic Input Level** bar responds dynamically to ambient sound.
+3. **Send from Windows Laptop**:
+   - In your Windows terminal inside `ChirpDrop`:
+     ```powershell
+     .\.venv\Scripts\python.exe main.py send --text "Hello from ChirpDrop!"
+     ```
+4. **Immediate Reception**:
+   - Within 1–2 seconds of the acoustic chirp ending, the smartphone screen will display:
+     ```text
+     🔊 MESSAGE RECEIVED
+     Hello from ChirpDrop!
+     ✓ Packet validation: Successful
+     Seq #1 | CRC: 0xCDBF | Size: 21 bytes | Opcode: DATA
+     ```
+5. **Offline Verification**:
+   - Turn on **Airplane Mode** on the Android phone or iPhone (disable Wi-Fi, Cellular, and Bluetooth).
+   - Re-send any text message from the laptop — the phone receives, decodes, and validates the packet completely offline.

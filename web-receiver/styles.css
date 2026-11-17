@@ -158,6 +158,7 @@ body {
     letter-spacing: 1.2px;
     text-transform: uppercase;
     cursor: pointer;
+    touch-action: manipulation;
     box-shadow: 0 4px 20px rgba(6, 182, 212, 0.4);
     transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.2s ease;
     display: flex;
@@ -251,6 +252,8 @@ body {
     background: linear-gradient(90deg, var(--accent-cyan) 0%, var(--accent-emerald) 75%, var(--accent-amber) 95%);
     border-radius: var(--radius-pill);
     transition: width 0.06s ease;
+    will-change: width;
+    transform: translateZ(0);
 }
 
 /* ==========================================================================
@@ -281,6 +284,7 @@ body {
     padding: 6px 10px;
     border-radius: var(--radius-sm);
     cursor: pointer;
+    touch-action: manipulation;
     transition: color 0.15s ease, background 0.15s ease;
 }
 
@@ -365,6 +369,7 @@ body {
     color: var(--text-primary);
     line-height: 1.4;
     word-break: break-word;
+    overflow-wrap: anywhere;
     user-select: text;
     -webkit-user-select: text;
     padding: 4px 0;

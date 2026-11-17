@@ -4,10 +4,11 @@
     <meta charset="UTF-8">
     <title>ChirpDrop - Acoustic Receiver</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="description" content="Air-gapped acoustic receiver for offline data transmission over sound waves">
+    <meta name="description" content="Air-gapped acoustic receiver for Android Chrome and iPhone Safari">
     <meta name="theme-color" content="#0a0e17">
 
-    <!-- iOS Safari Web App Metas -->
+    <!-- Mobile Web App Metas (iOS Safari & Android Chrome) -->
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="ChirpDrop">
@@ -32,16 +33,16 @@
             </div>
         </header>
 
-        <!-- Insecure Context Warning (Hidden by default, shown if HTTP on iOS) -->
+        <!-- Insecure Context Warning (Hidden by default, shown if HTTP on mobile) -->
         <div id="insecureBanner" class="alert-banner warning">
-            <div class="alert-title">⚠️ HTTPS Context Required for iOS Safari</div>
-            <div>iPhone Safari requires a secure context (HTTPS) to access the microphone. Please open this receiver via <strong>HTTPS</strong> or host it on <strong>GitHub Pages</strong>.</div>
+            <div class="alert-title">⚠️ HTTPS Context Required</div>
+            <div id="insecureMessage">Microphone access requires a secure origin (HTTPS). Android Chrome and iPhone Safari block microphone capture over unencrypted HTTP. Please open this receiver via <strong>HTTPS</strong> or host it on <strong>GitHub Pages</strong>.</div>
         </div>
 
-        <!-- Permission Denied Warning (Hidden by default) -->
+        <!-- Permission Denied / Error Warning (Hidden by default) -->
         <div id="permissionBanner" class="alert-banner danger">
-            <div class="alert-title">🚫 Microphone Permission Denied</div>
-            <div>Safari blocked microphone access. To enable: open iPhone <strong>Settings → Safari → Microphone → Allow</strong>, then refresh this page.</div>
+            <div class="alert-title">🚫 Microphone Permission Required</div>
+            <div id="permissionMessage">Microphone access was denied. Please allow microphone permissions in your browser's site settings and reload.</div>
         </div>
 
         <!-- Primary Control Card -->
@@ -101,6 +102,10 @@
             <div class="diag-row">
                 <span>Audio Engine:</span>
                 <span id="diagSampleRate" class="diag-val">Ready (48,000 Hz)</span>
+            </div>
+            <div class="diag-row">
+                <span>Platform:</span>
+                <span id="diagPlatform" class="diag-val">Detecting...</span>
             </div>
             <div class="diag-row">
                 <span>Offline Status:</span>

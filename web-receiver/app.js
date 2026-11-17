@@ -2,7 +2,7 @@
  * ChirpDrop - Browser Acoustic Receiver Application
  * --------------------------------------------------
  * Real-time audio demodulation, GGWave WebAssembly interface, and binary packet
- * validation optimized for iPhone Safari and modern mobile browsers.
+ * validation optimized for Android Google Chrome and iPhone Safari.
  */
 
 (function () {
@@ -24,9 +24,12 @@
     const emptyState = document.getElementById('emptyState');
     const clearBtn = document.getElementById('clearBtn');
     const insecureBanner = document.getElementById('insecureBanner');
+    const insecureMessage = document.getElementById('insecureMessage');
     const permissionBanner = document.getElementById('permissionBanner');
+    const permissionMessage = document.getElementById('permissionMessage');
     const diagModem = document.getElementById('diagModem');
     const diagSampleRate = document.getElementById('diagSampleRate');
+    const diagPlatform = document.getElementById('diagPlatform');
     const diagOffline = document.getElementById('diagOffline');
 
     // Web Audio & GGWave State
@@ -51,8 +54,31 @@
     let statusResetTimer = null;
 
     /**
+     * Inspect platform and browser environment for tailored UX and diagnostics.
+     */
+    function getPlatformDetails() {
+        const ua = navigator.userAgent || '';
+        const isAndroid = /Android/i.test(ua);
+        const isIOS = /iPhone|iPad|iPod/i.test(ua);
+        let name = 'Desktop Browser';
+
+        if (isAndroid) {
+            name = /Chrome/i.test(ua) ? 'Android (Chrome)' : 'Android Browser';
+        } else if (isIOS) {
+            name = 'iPhone / iOS (Safari)';
+        } else if (/Chrome/i.test(ua)) {
+            name = 'Desktop (Chrome)';
+        } else if (/Safari/i.test(ua)) {
+            name = 'Desktop (Safari)';
+        } else if (/Firefox/i.test(ua)) {
+            name = 'Desktop (Firefox)';
+        }
+        return { isAndroid, isIOS, name };
+    }
+
+    /**
      * Phase-continuous audio stream resampler.
-     * Converts arbitrary hardware microphone rates (e.g., Safari 44.1 kHz) to 48.0 kHz
+     * Converts arbitrary hardware microphone rates (e.g. 44.1 kHz, 16 kHz) to 48.0 kHz
      * and batches output samples into fixed 1024-sample blocks required by GGWave.
      */
     class AudioStreamResampler {
@@ -113,7 +139,8 @@
     }
 
     /**
-     * Inspect security context. Safari strictly denies getUserMedia over plain HTTP on LAN IPs.
+     * Inspect security context. Both Android Chrome and iOS Safari strictly
+     * deny getUserMedia over plain HTTP on LAN IPs.
      */
     function checkSecurityContext() {
         const isLocalhost = Boolean(
@@ -123,6 +150,11 @@
         );
         const isSecure = window.isSecureContext || location.protocol === 'https:' || isLocalhost;
         if (!isSecure) {
+            const { isAndroid } = getPlatformDetails();
+            const browserName = isAndroid ? 'Android Chrome' : 'Mobile Safari';
+            if (insecureMessage) {
+                insecureMessage.innerHTML = `Microphone capture is blocked over unencrypted HTTP by ${browserName}. Please load this application via <strong>HTTPS</strong> or through <strong>GitHub Pages</strong>.`;
+            }
             insecureBanner.style.display = 'block';
         }
     }
@@ -239,7 +271,7 @@
         // Update status badge
         setStatus(`Status: Message received and validated! (Seq #${packetResult.sequenceId})`, 3000);
 
-        // Haptic feedback if supported (iOS/Android)
+        // Haptic feedback (supported natively on Android Chrome and modern iOS)
         if ('vibrate' in navigator) {
             try { navigator.vibrate(80); } catch { /* ignore */ }
         }
@@ -289,6 +321,7 @@
 
     /**
      * Start acoustic listening via Web Audio API.
+     * Only executed after direct user gesture (tap/click).
      */
     async function startListening() {
         permissionBanner.style.display = 'none';
@@ -302,7 +335,6 @@
             // 1. Create or resume AudioContext following user gesture
             const AudioContextClass = window.AudioContext || window.webkitAudioContext;
             if (!audioContext) {
-                // Request 48000 Hz context; Safari 14.5+ supports this natively
                 try {
                     audioContext = new AudioContextClass({ sampleRate: TARGET_SAMPLE_RATE });
                 } catch {
@@ -313,6 +345,14 @@
                 await audioContext.resume();
             }
 
+            // Handle system interruptions on mobile (e.g. phone call or backgrounding)
+            audioContext.onstatechange = () => {
+                console.log('[ChirpDrop] AudioContext state changed to:', audioContext.state);
+                if (audioContext.state === 'suspended' && isListening) {
+                    statusText.textContent = 'Status: Audio paused by system (tap to resume)';
+                }
+            };
+
             const actualRate = audioContext.sampleRate;
             if (actualRate === TARGET_SAMPLE_RATE) {
                 diagSampleRate.textContent = `${actualRate.toLocaleString()} Hz (Native)`;
@@ -320,19 +360,28 @@
             } else {
                 diagSampleRate.textContent = `${actualRate.toLocaleString()} Hz → ${TARGET_SAMPLE_RATE.toLocaleString()} Hz`;
                 resampler = new AudioStreamResampler(actualRate, TARGET_SAMPLE_RATE);
-                console.log(`[ChirpDrop] Configured software resampler: ${actualRate} Hz -> ${TARGET_SAMPLE_RATE} Hz`);
+                console.log(`[ChirpDrop] Software resampler active: ${actualRate} Hz -> ${TARGET_SAMPLE_RATE} Hz`);
             }
 
-            // 2. Request microphone stream with clean acoustic constraints
-            const constraints = {
+            // 2. Request microphone stream with clean acoustic constraints & Android fallback
+            let stream = null;
+            const preferredConstraints = {
                 audio: {
                     echoCancellation: false,
                     noiseSuppression: false,
                     autoGainControl: false,
+                    channelCount: 1,
                 }
             };
 
-            mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
+            try {
+                stream = await navigator.mediaDevices.getUserMedia(preferredConstraints);
+            } catch (constraintErr) {
+                console.warn('[ChirpDrop] Preferred acoustic audio constraints failed, retrying with fallback audio constraints:', constraintErr);
+                // Fallback for Android devices with strict OEM audio layers that reject constraint options
+                stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            }
+            mediaStream = stream;
 
             // 3. Initialize GGWave instance with native 48,000 Hz processing parameters
             if (!ggwaveInstance) {
@@ -353,10 +402,13 @@
                 resampler.reset();
             }
 
-            // 4. Request Screen WakeLock to keep iOS Safari active
+            // 4. Request Screen WakeLock to keep Android Chrome and iOS Safari active
             if ('wakeLock' in navigator) {
                 try {
                     wakeLock = await navigator.wakeLock.request('screen');
+                    wakeLock.addEventListener('release', () => {
+                        console.log('[ChirpDrop] Screen WakeLock was released.');
+                    });
                     console.log('[ChirpDrop] Screen WakeLock acquired.');
                 } catch (e) {
                     console.debug('[ChirpDrop] WakeLock not granted:', e);
@@ -442,9 +494,37 @@
             isListening = false;
             updateMeter(0);
 
+            const { isAndroid, isIOS } = getPlatformDetails();
+            const permMsg = document.getElementById('permissionMessage');
+
             if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+                if (permMsg) {
+                    if (isAndroid) {
+                        permMsg.innerHTML = `Chrome blocked microphone access.<br>
+                        • Tap the <strong>tune / lock icon 🔒</strong> in Chrome’s address bar → <strong>Permissions → Microphone → Allow</strong>.<br>
+                        • Or open Android <strong>Settings → Apps → Chrome → Permissions → Microphone → Allow</strong>.<br>
+                        Then tap <strong>Start Listening</strong> again.`;
+                    } else if (isIOS) {
+                        permMsg.innerHTML = `Safari blocked microphone access.<br>
+                        Open iPhone <strong>Settings → Safari → Microphone → Allow</strong>, then refresh this page.`;
+                    } else {
+                        permMsg.innerHTML = `Microphone access was denied. Please allow microphone permissions in your browser’s site settings, then tap Start Listening again.`;
+                    }
+                }
                 permissionBanner.style.display = 'block';
                 statusText.textContent = 'Status: Microphone access denied';
+            } else if (err.name === 'NotFoundError') {
+                if (permMsg) {
+                    permMsg.innerHTML = `No microphone hardware detected on this device. Please connect an audio input device and try again.`;
+                }
+                permissionBanner.style.display = 'block';
+                statusText.textContent = 'Status: Microphone not found';
+            } else if (err.name === 'NotReadableError') {
+                if (permMsg) {
+                    permMsg.innerHTML = `The microphone is currently busy or locked by another app (e.g. active phone call, voice recorder, or meeting). Please close other audio apps and try again.`;
+                }
+                permissionBanner.style.display = 'block';
+                statusText.textContent = 'Status: Microphone busy';
             } else {
                 alert(`Could not start acoustic listener: ${err.message}`);
                 statusText.textContent = `Status: Error (${err.name || 'Unknown'})`;
@@ -518,6 +598,28 @@
         }
     });
 
+    // Mobile backgrounding & tab switching recovery (Android Chrome & iOS Safari)
+    document.addEventListener('visibilitychange', async () => {
+        if (document.visibilityState === 'visible' && isListening) {
+            console.log('[ChirpDrop] App returned to foreground. Checking audio state...');
+            if (audioContext && audioContext.state === 'suspended') {
+                try {
+                    await audioContext.resume();
+                    console.log('[ChirpDrop] AudioContext successfully resumed after visibility change.');
+                } catch (e) {
+                    console.warn('[ChirpDrop] Could not resume AudioContext on visibility change:', e);
+                }
+            }
+            // Re-acquire screen wake lock on Android/iOS if released
+            if ('wakeLock' in navigator && (!wakeLock || wakeLock.released)) {
+                try {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                    console.log('[ChirpDrop] Re-acquired screen wake lock.');
+                } catch (e) {}
+            }
+        }
+    });
+
     // Offline Service Worker Registration
     function registerServiceWorker() {
         if ('serviceWorker' in navigator) {
@@ -538,6 +640,10 @@
 
     // Page Lifecycle Initialization
     window.addEventListener('DOMContentLoaded', () => {
+        const platform = getPlatformDetails();
+        if (diagPlatform) {
+            diagPlatform.textContent = platform.name;
+        }
         checkSecurityContext();
         initGgWaveModule();
         registerServiceWorker();
