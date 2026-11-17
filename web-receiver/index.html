@@ -71,6 +71,52 @@
             </div>
         </section>
 
+        <!-- Live Audio Diagnostics Section -->
+        <section class="diagnostics-card" aria-label="Live Audio Pipeline Diagnostics">
+            <div class="diagnostics-header">
+                <span class="diagnostics-title">📊 Live Audio Diagnostics</span>
+                <span id="diagEngineStatus" class="diag-status-pill">Idle</span>
+            </div>
+            <div class="diagnostics-grid">
+                <div class="diag-metric">
+                    <span class="metric-label">Microphone</span>
+                    <span id="diagMicStatus" class="metric-value">Inactive</span>
+                </div>
+                <div class="diag-metric">
+                    <span class="metric-label">AudioContext</span>
+                    <span id="diagAudioState" class="metric-value">Closed</span>
+                </div>
+                <div class="diag-metric">
+                    <span class="metric-label">Input Rate</span>
+                    <span id="diagInRate" class="metric-value">-- Hz</span>
+                </div>
+                <div class="diag-metric">
+                    <span class="metric-label">Decoder Rate</span>
+                    <span id="diagOutRate" class="metric-value">48,000 Hz</span>
+                </div>
+                <div class="diag-metric">
+                    <span class="metric-label">Signal Level</span>
+                    <span id="diagDbLevel" class="metric-value">-∞ dB</span>
+                </div>
+                <div class="diag-metric">
+                    <span class="metric-label">Blocks In</span>
+                    <span id="diagBlocksCount" class="metric-value">0</span>
+                </div>
+                <div class="diag-metric">
+                    <span class="metric-label">Decode Cycles</span>
+                    <span id="diagDecodeAttempts" class="metric-value">0</span>
+                </div>
+                <div class="diag-metric">
+                    <span class="metric-label">Messages OK</span>
+                    <span id="diagMessagesCount" class="metric-value">0</span>
+                </div>
+            </div>
+            <div class="diag-dsp-row">
+                <span class="metric-label">DSP / Filters:</span>
+                <span id="diagDspFilters" class="metric-value mono">AEC: Off | NS: Off | AGC: Off</span>
+            </div>
+        </section>
+
         <!-- Received Messages Section -->
         <section class="messages-section">
             <div class="section-header">

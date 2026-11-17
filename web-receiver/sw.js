@@ -6,7 +6,7 @@
  * Compatible with root hosting and GitHub Pages subdirectories.
  */
 
-const CACHE_NAME = 'chirpdrop-v2';
+const CACHE_NAME = 'chirpdrop-v3';
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
