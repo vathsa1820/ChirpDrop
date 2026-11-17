@@ -1,0 +1,21 @@
+# ==============================================================================
+# ChirpDrop: Air-Gapped Acoustic Data & File Transfer
+# Verified Runtime Dependencies for Windows 10 / 11 (Python 3.11 64-bit)
+# ==============================================================================
+
+# Desktop GUI Framework (Qt 6 bindings for Python)
+PySide6>=6.5.0,<6.9.0
+
+# Cross-platform audio input/output interface (PortAudio wrapper)
+sounddevice>=0.4.6,<0.6.0
+
+# Numerical buffer management & audio signal processing
+# Pinned strictly to 1.26.4 to preserve C-API ABI compatibility with compiled extensions
+numpy==1.26.4
+
+# Acoustic data modulation and demodulation engine (Windows x64 precompiled wheel)
+# Top-level import module provided: `ggwave`
+ggwave-wheels==0.4.2.5
+
+# Testing & verification framework
+pytest>=7.4.0

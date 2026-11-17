@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ChirpDrop - Acoustic Receiver</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="description" content="Air-gapped acoustic receiver for offline data transmission over sound waves">
+    <meta name="theme-color" content="#0a0e17">
+
+    <!-- iOS Safari Web App Metas -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="ChirpDrop">
+    <link rel="apple-touch-icon" href="./icon-192.png">
+    <link rel="icon" type="image/svg+xml" href="./icon.svg">
+    <link rel="manifest" href="./manifest.json">
+
+    <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+    <main class="container">
+        <!-- App Header & Branding -->
+        <header class="app-header">
+            <div class="brand-row">
+                <img src="./icon.svg" alt="ChirpDrop Logo" class="brand-icon">
+                <h1 class="brand-title">CHIRPDROP</h1>
+            </div>
+            <div class="app-subtitle">Acoustic Receiver</div>
+            <div class="air-gap-pill">
+                <span class="air-gap-dot"></span>
+                <span>Air-Gapped Acoustic Channel</span>
+            </div>
+        </header>
+
+        <!-- Insecure Context Warning (Hidden by default, shown if HTTP on iOS) -->
+        <div id="insecureBanner" class="alert-banner warning">
+            <div class="alert-title">⚠️ HTTPS Context Required for iOS Safari</div>
+            <div>iPhone Safari requires a secure context (HTTPS) to access the microphone. Please open this receiver via <strong>HTTPS</strong> or host it on <strong>GitHub Pages</strong>.</div>
+        </div>
+
+        <!-- Permission Denied Warning (Hidden by default) -->
+        <div id="permissionBanner" class="alert-banner danger">
+            <div class="alert-title">🚫 Microphone Permission Denied</div>
+            <div>Safari blocked microphone access. To enable: open iPhone <strong>Settings → Safari → Microphone → Allow</strong>, then refresh this page.</div>
+        </div>
+
+        <!-- Primary Control Card -->
+        <section class="control-card">
+            <!-- Large Action Button -->
+            <button id="toggleBtn" class="btn-primary" type="button" aria-label="Start Acoustic Listening">
+                <span id="btnIcon">🎙️</span>
+                <span id="btnText">START LISTENING</span>
+            </button>
+
+            <!-- Status Indicator Badge -->
+            <div id="statusBadge" class="status-badge" role="status" aria-live="polite">
+                <span class="status-dot"></span>
+                <span id="statusText">Status: Not listening</span>
+            </div>
+
+            <!-- Real-time Audio Activity Level Meter -->
+            <div class="meter-container" title="Live audio input activity">
+                <div class="meter-label-row">
+                    <span>Acoustic Input Level</span>
+                    <span id="meterDb">-∞ dB</span>
+                </div>
+                <div class="meter-track">
+                    <div id="meterBar" class="meter-bar"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Received Messages Section -->
+        <section class="messages-section">
+            <div class="section-header">
+                <h2 class="section-title">Received Transmissions</h2>
+                <button id="clearBtn" class="btn-clear" type="button" aria-label="Clear Messages">[ Clear Messages ]</button>
+            </div>
+
+            <div id="messagesList" class="messages-list" role="region" aria-live="polite">
+                <!-- Initial Empty State -->
+                <div id="emptyState" class="empty-state">
+                    <div class="empty-icon">📡</div>
+                    <div><strong>No acoustic messages received yet.</strong></div>
+                    <div>Tap <strong>Start Listening</strong> and transmit from the Windows laptop:<br>
+                    <code>python main.py send --text "Hello from ChirpDrop!"</code></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- System Diagnostics & Status -->
+        <footer class="diagnostic-strip">
+            <div class="diag-row">
+                <span>Modem Core:</span>
+                <span id="diagModem" class="diag-val">GGWave WebAssembly</span>
+            </div>
+            <div class="diag-row">
+                <span>Protocol:</span>
+                <span class="diag-val">Audible Fast (Protocol ID 1)</span>
+            </div>
+            <div class="diag-row">
+                <span>Audio Engine:</span>
+                <span id="diagSampleRate" class="diag-val">Ready (48,000 Hz)</span>
+            </div>
+            <div class="diag-row">
+                <span>Offline Status:</span>
+                <span id="diagOffline" class="diag-val">Checking...</span>
+            </div>
+        </footer>
+    </main>
+
+    <!-- JavaScript Dependencies -->
+    <script src="./packet.js"></script>
+    <script src="./ggwave.js"></script>
+    <script src="./app.js"></script>
+</body>
+</html>
